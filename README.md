@@ -42,6 +42,7 @@ Repository layout (current):
 - `mcp/demosquare/.venv/` — local virtual environment folder (typically not committed)
 - [mcp/sem_ver/sem_ver.py](mcp/sem_ver/sem_ver.py) — a second MCP server showcasing Pydantic strict typing + Enums
 - [mcp/sem_ver/pyproject.toml](mcp/sem_ver/pyproject.toml) — Python packaging metadata (declares dependencies on `mcp` + `pydantic`)
+- [mcp/sem_ver/tests/test_sem_ver.py](mcp/sem_ver/tests/test_sem_ver.py) — basic unit tests for `bump_version` and `compare_versions`
 - `mcp/sem_ver/uv.lock` — lockfile for `uv`
 - `mcp/sem_ver/.venv/` — local virtual environment folder (typically not committed)
 
@@ -95,6 +96,30 @@ python -m venv .venv
 python -m pip install -U pip
 python -m pip install "mcp>=1.0.0"
 python demosquare.py
+```
+
+To set up the `sem_ver` server with `pip`:
+
+```powershell
+cd ..\sem_ver
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -U pip
+python -m pip install "mcp>=1.0.0" "pydantic>=2.0.0"
+python sem_ver.py
+```
+
+---
+
+## Testing
+
+The only included tests are for the `sem_ver` demo server.
+
+From the repo root:
+
+```powershell
+cd mcp\sem_ver
+uv run python -m unittest discover -s tests -p "test*.py" -v
 ```
 
 ---
@@ -494,7 +519,7 @@ Common causes:
 Try launching it the same way VS Code does:
 
 ```powershell
-python mcp\demosquare\demosquare.py
+uv run --directory mcp/demosquare python demosquare.py
 ```
 
 If you’re using `uv`, prefer:

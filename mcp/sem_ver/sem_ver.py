@@ -11,9 +11,9 @@ mcp = FastMCP("sem_ver")
 
 # SemVer 2.0.0 (allows optional prerelease/build). This is intentionally strict.
 _SEMVER_PATTERN = (
-    r"^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
-    r"(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?"
-    r"(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$"
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
+    r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
 )
 _SEMVER_RE = re.compile(_SEMVER_PATTERN)
 
@@ -59,6 +59,13 @@ class BumpVersionArgs(BaseModel):
         ),
     ]
 
+    @field_validator("part", mode="before")
+    @classmethod
+    def _coerce_part(cls, value: object) -> object:
+        if isinstance(value, str):
+            return BumpPart(value)
+        return value
+
     @field_validator("version")
     @classmethod
     def _validate_version(cls, value: str, info: Any) -> str:
@@ -87,6 +94,13 @@ class CompareVersionsArgs(BaseModel):
         bool,
         Field(description="Allow a leading 'v' prefix (e.g. v1.2.3)", default=True),
     ]
+
+    @field_validator("op", mode="before")
+    @classmethod
+    def _coerce_op(cls, value: object) -> object:
+        if isinstance(value, str):
+            return CompareOp(value)
+        return value
 
     @field_validator("left", "right")
     @classmethod
