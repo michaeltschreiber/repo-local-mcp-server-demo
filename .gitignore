@@ -1,0 +1,10 @@
+# Python virtual environments (repo-local MCP servers may create these)
+**/.venv/
+
+# Python cache
+**/__pycache__/
+*.py[cod]
+
+# OS / editor
+.DS_Store
+.vscode/settings.json

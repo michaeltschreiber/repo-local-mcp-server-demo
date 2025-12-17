@@ -1,0 +1,27 @@
+{
+	"servers": {
+		"demosquare": {
+			"type": "stdio",
+			"command": "uv",
+			"args": [
+				"run",
+				"--directory",
+				"${workspaceFolder}/mcp/demosquare",
+				"python",
+				"demosquare.py"
+			]
+		},
+		"sem_ver": {
+			"type": "stdio",
+			"command": "uv",
+			"args": [
+				"run",
+				"--directory",
+				"${workspaceFolder}/mcp/sem_ver",
+				"python",
+				"sem_ver.py"
+			]
+		}
+	},
+	"inputs": []
+}

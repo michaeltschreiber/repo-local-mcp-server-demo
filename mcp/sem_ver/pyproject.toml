@@ -1,0 +1,11 @@
+[project]
+name = "sem-ver-mcp"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "mcp>=1.0.0",
+  "pydantic>=2.0.0",
+]
+
+[tool.uv]
+# No special config required; kept for clarity.
