@@ -21,6 +21,17 @@
 				"python",
 				"sem_ver.py"
 			]
+		},
+		"repo-rg": {
+			"type": "stdio",
+			"command": "uv",
+			"args": [
+				"run",
+				"--directory",
+				"${workspaceFolder}/mcp/repo_rg",
+				"python",
+				"repo_rg.py"
+			]
 		}
 	},
 	"inputs": []

@@ -1,11 +1,12 @@
-# demosquare-mcp (Repo-local MCP server demo)
+# Repo-local MCP Server Demo
 
 This repository is a minimal, intentionally small example of creating an **MCP (Model Context Protocol) server** inside a repository, so your repo can ship **repo-specific tools** that Copilot/agents can call.
 
-This repo includes two demo MCP servers:
+This repo includes three demo MCP servers:
 
 - **`demosquare`** — tiny math tools to validate end-to-end tool calling
 - **`sem_ver`** — shows **Pydantic strict typing + Enums** for structured tool inputs
+- **`repo_rg`** — performs **code-oriented search** using `ripgrep` with cascading strategies
 
 The demo MCP servers expose these tools:
 
@@ -13,8 +14,9 @@ The demo MCP servers expose these tools:
 - `sqrt(n)` → returns the principal square root of $n$ (errors for negative inputs)
 - `bump_version(args)` → structured SemVer bumping via Pydantic + Enums
 - `compare_versions(args)` → structured SemVer comparisons via Pydantic + Enums
+- `search(args)` → searches the repo using regex, literal, or multi-term AND strategies
 
-The server runs over **stdio**, which is the transport VS Code’s MCP integration expects for local “command-based” MCP servers.
+The servers run over **stdio**, which is the transport VS Code’s MCP integration expects for local “command-based” MCP servers.
 
 ## Demo scope (what this is / isn’t)
 
@@ -35,22 +37,25 @@ Non-goals for this demo:
 
 Repository layout (current):
 
-- [.vscode/mcp.json](.vscode/mcp.json) — VS Code workspace MCP server configuration (launches the server via `uv` over stdio)
-- [mcp/demosquare/demosquare.py](mcp/demosquare/demosquare.py) — the MCP server implementation
-- [mcp/demosquare/pyproject.toml](mcp/demosquare/pyproject.toml) — Python packaging metadata (declares dependency on `mcp`)
-- `mcp/demosquare/uv.lock` — lockfile for `uv`
+- [.vscode/mcp.json](.vscode/mcp.json) — VS Code workspace MCP server configuration (launches the servers via `uv` over stdio)
+- [mcp/demosquare/demosquare.py](mcp/demosquare/demosquare.py) — the `demosquare` MCP server implementation (basic math)
+- [mcp/demosquare/pyproject.toml](mcp/demosquare/pyproject.toml) — Python packaging metadata for `demosquare`
+- `mcp/demosquare/uv.lock` — lockfile for `demosquare`
 - `mcp/demosquare/.venv/` — local virtual environment folder (typically not committed)
-- [mcp/sem_ver/sem_ver.py](mcp/sem_ver/sem_ver.py) — a second MCP server showcasing Pydantic strict typing + Enums
-- [mcp/sem_ver/pyproject.toml](mcp/sem_ver/pyproject.toml) — Python packaging metadata (declares dependencies on `mcp` + `pydantic`)
+- [mcp/sem_ver/sem_ver.py](mcp/sem_ver/sem_ver.py) — the `sem_ver` MCP server implementation (Pydantic + Enums)
+- [mcp/sem_ver/pyproject.toml](mcp/sem_ver/pyproject.toml) — Python packaging metadata for `sem_ver` (adds `pydantic`)
 - [mcp/sem_ver/tests/test_sem_ver.py](mcp/sem_ver/tests/test_sem_ver.py) — basic unit tests for `bump_version` and `compare_versions`
 - `mcp/sem_ver/uv.lock` — lockfile for `uv`
 - `mcp/sem_ver/.venv/` — local virtual environment folder (typically not committed)
+- [mcp/repo_rg/repo_rg.py](mcp/repo_rg/repo_rg.py) — the `repo-rg` MCP server implementation (ripgrep wrapper)
+- [mcp/repo_rg/pyproject.toml](mcp/repo_rg/pyproject.toml) — Python packaging metadata for `repo-rg`
 
 ---
 
 ## Prerequisites
 
 - Python **3.10+** (matches `requires-python = ">=3.10"` in the project)
+- `ripgrep` (required for `repo-rg`)
 - Either:
   - `uv` (recommended if you want to use the included `uv.lock`), or
   - `pip`/`venv`
@@ -85,6 +90,14 @@ uv sync
 uv run python sem_ver.py
 ```
 
+To set up the `repo-rg` server:
+
+```powershell
+cd ..\repo_rg
+uv sync
+uv run python repo_rg.py
+```
+
 ### Option B: Using `venv` + `pip`
 
 From the repo root:
@@ -107,6 +120,17 @@ python -m venv .venv
 python -m pip install -U pip
 python -m pip install "mcp>=1.0.0" "pydantic>=2.0.0"
 python sem_ver.py
+```
+
+To set up the `repo-rg` server with `pip`:
+
+```powershell
+cd ..\repo_rg
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -U pip
+python -m pip install "mcp>=1.0.0" "pydantic>=2.0.0"
+python repo_rg.py
 ```
 
 ---
@@ -140,9 +164,16 @@ cd mcp\sem_ver
 python sem_ver.py
 ```
 
+Or:
+
+```powershell
+cd mcp\repo_rg
+python repo_rg.py
+```
+
 ### What “stdio transport” means
 
-This server uses:
+These servers use:
 
 - `mcp.run(transport="stdio")`
 
@@ -204,6 +235,23 @@ It exists to demonstrate **strict, structured tool contracts** using Pydantic mo
 - **Behavior:** Compares two SemVer 2.0.0 versions using an enum operator and returns `{left, right, op, result}`.
 - **Why it’s interesting:** Enums constrain the allowed operators (`lt`, `lte`, `eq`, `gte`, `gt`), which typically renders as a fixed set of choices in tool UIs.
 
+### Server: `repo-rg`
+
+The third MCP server is created with:
+
+- `mcp = FastMCP("repo-rg")`
+
+It demonstrates wrapping a CLI tool (`ripgrep`) to provide code-optimized search with cascading strategies.
+
+### Tool: `search`
+
+- **Signature:** `search(args: SearchArgs) -> str`
+- **Behavior:** Searches the repository for a query string.
+- **Strategies:**
+    1.  **Regex:** Tries to use the query as a regex.
+    2.  **Literal:** Falls back to fixed-string matching if regex fails or is invalid.
+    3.  **Multi-term AND:** If spaces are present, tries to find lines containing all terms.
+
 ---
 
 ## Using it from VS Code (repo-specific tools)
@@ -244,6 +292,17 @@ Current contents:
         "python",
         "sem_ver.py"
       ]
+    },
+    "repo-rg": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${workspaceFolder}/mcp/repo_rg",
+        "python",
+        "repo_rg.py"
+      ]
     }
   },
   "inputs": []
@@ -252,9 +311,11 @@ Current contents:
 
 #### What each field means
 
+(Using `demosquare` as the example; `sem_ver` and `repo-rg` are configured identically).
+
 - `servers`
   - A map of server registrations by name.
-  - The key (`"demosquare"`) is the server identifier VS Code uses in UI/logs.
+  - The key (`"demosquare"`, `"sem_ver"`, `"repo-rg"`) is the server identifier VS Code uses in UI/logs.
 
 - `servers.demosquare.type: "stdio"`
   - Declares the MCP transport.
@@ -319,6 +380,8 @@ Example prompts:
 - “use demosquare to find sqrt of the result”
 - “use sem_ver to bump version 1.2.3 patch”
 - “use sem_ver to compare 1.2.3 lt 2.0.0”
+- “use repo-rg to search for 'TODO'”
+- “use repo-rg to search for 'class User'”
 
 Behind the scenes, the host selects a tool and sends a structured MCP tool call.
 
